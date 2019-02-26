@@ -134,5 +134,5 @@ class LeNet_Mode():
                 print("cost: ",self.sess.run(g['cost'],feed_dict={g['x']:batch_xs, g['y']:batch_ys}),"accurary: ",self.sess.run(g['accurary'],feed_dict={g['x']:batch_xs, g['y']:batch_ys}))
                 # print("correct_prediction",self.sess.run(g['correct_prediction'],feed_dict={g['x']:batch_xs,g['y']:batch_ys}))
 
-VGG = LeNet_Mode()
-VGG.load_data()
+LeNet = LeNet_Mode()
+LeNet.load_data()
