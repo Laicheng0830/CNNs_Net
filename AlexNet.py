@@ -95,7 +95,7 @@ class AlexNet_Mode():
         g = self.model_bulid(28, 28, 1, 10)
         self.init_sess()
         for i in range(1000):
-            batch_xs, batch_ys = mnist.train.next_batch(100)
+            batch_xs, batch_ys = mnist.train.next_batch(500)
             batch_xs = np.reshape(batch_xs,[-1,28,28,1])
             self.train_network(g, batch_xs, batch_ys)
             print("cost: ", self.sess.run(g['cost'], feed_dict={g['x']: batch_xs, g['y']: batch_ys}), "accurary: ",
