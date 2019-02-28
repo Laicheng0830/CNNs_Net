@@ -1,6 +1,5 @@
 # CNNs_Net
-Create the CNN mainstream network framework through Tensorflow, including LeNte, VGG, AlexNet
-Test using MNIST data
+Create the CNN mainstream network framework through Tensorflow, including LeNte, VGG, AlexNet; Test using MNIST data
 
 Create CNNs network,Error encountered:
 
