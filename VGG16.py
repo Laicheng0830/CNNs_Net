@@ -98,7 +98,7 @@ class VGG16_Mode():
         loss = tf.losses.softmax_cross_entropy(y,finaloutput)
 
         # optimize
-        LEARNING_RATE_BASE = 0.001
+        LEARNING_RATE_BASE = 0.0001
         LEARNING_RATE_DECAY = 0.1
         LEARNING_RATE_STEP = 300
         gloabl_steps = tf.Variable(0, trainable=False)
