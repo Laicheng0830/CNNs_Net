@@ -95,7 +95,7 @@ class VGG16_Mode():
         finaloutput = self.finlaout_layer(fc2,fc_dims=10,name="final")
 
         # cost
-        loss = tf.reduce_mean(-tf.reduce_sum(y*tf.log(finaloutput),reduction_indices=[1]))
+        loss = tf.losses.softmax_cross_entropy(y,finaloutput)
 
         # optimize
         LEARNING_RATE_BASE = 0.001
@@ -112,17 +112,17 @@ class VGG16_Mode():
 
         # prediction
         prediction_label = finaloutput
-        correct_prediction = tf.equal(tf.argmax(prediction_label,1),tf.argmax(y,1))
-        accurary = tf.reduce_mean(tf.cast(correct_prediction,dtype=tf.float32))
-        correct_times_in_batch = tf.reduce_mean(tf.cast(correct_prediction,dtype=tf.int32))
+        correct_prediction = tf.equal(tf.argmax(prediction_label, 1), tf.argmax(y, 1))
+        accurary = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
+        correct_times_in_batch = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.int32))
         return dict(
             x=x,
             y=y,
             optimize=optimize,
-            correct_prediction=correct_prediction,
+            correct_prediction=prediction_label,
             correct_times_in_batch=correct_times_in_batch,
             cost=loss,
-            accurary = accurary
+            accurary=accurary
         )
 
     def init_sess(self):
@@ -131,6 +131,9 @@ class VGG16_Mode():
         self.sess.run(init)
 
     def train_network(self,graph,x_train,y_train):
+        # Tensorfolw Adding more and more nodes to the previous graph results in a larger and larger memory footprint
+        # reset graph
+        tf.reset_default_graph()
         self.sess.run(graph['optimize'],feed_dict={graph['x']:x_train, graph['y']:y_train})
 
     def load_data(self):
@@ -138,12 +141,12 @@ class VGG16_Mode():
         g = self.model_bulid(28, 28, 1, 10)
         self.init_sess()
         for i in range(1000):
-            batch_xs, batch_ys = mnist.train.next_batch(1000)
+            batch_xs, batch_ys = mnist.train.next_batch(500)
             batch_xs = np.reshape(batch_xs,[-1,28,28,1])
-            self.train_network(g,batch_xs,batch_ys)
-            if i%50==0:
-                print("cost: ",self.sess.run(g['cost'],feed_dict={g['x']:batch_xs, g['y']:batch_ys}))
-                print("accurary: ",self.sess.run(g['accurary'],feed_dict={g['x']:batch_xs, g['y']:batch_ys}))
+            self.train_network(g, batch_xs, batch_ys)
+            print("cost: ", self.sess.run(g['cost'], feed_dict={g['x']: batch_xs, g['y']: batch_ys}), "accurary: ",
+                  self.sess.run(g['accurary'], feed_dict={g['x']: batch_xs, g['y']: batch_ys}))
 
 VGG = VGG16_Mode()
 VGG.load_data()
+
