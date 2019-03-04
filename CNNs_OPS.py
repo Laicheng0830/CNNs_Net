@@ -37,30 +37,34 @@ def convLayer_nGPU(x, kHeight, kWidth, strideX, strideY,
         out = tf.nn.bias_add(mergeFeatureMap, b)
     return tf.nn.relu(tf.reshape(out, mergeFeatureMap.get_shape().as_list()), name = scope.name)
 
-def inception_model(data,filters_1x1_1, filters_1x1_2, filters_3x3, filters_1x1_3, filters_5x5, filters_1x1_4):
+def inception_model(data,filters_1x1_1, filters_1x1_2, filters_3x3, filters_1x1_3, filters_5x5, filters_1x1_4,name):
     # (conv 1x1 1)
     # (conv 1x1 1)==>(conv 3x3 1)
     # (conv 1x1 1)==>(conv 5x5 1)
     # (maxpool 3x3 1)==>(conv 1x1 1)
     # concat
-    data_in = data.shape[3]
-    conv1_1 = conv_layer(data,ksize=[1,1,data_in,filters_1x1_1],stride=[1,1,1,1],name='conv1_1')
-    conv2_1 = conv_layer(data,ksize=[1,1,data_in,filters_1x1_2],stride=[1,1,1,1],name='conv2_1')
-    conv2_2 = conv_layer(conv2_1,ksize=[3,3,filters_1x1_2,filters_3x3],stride=[1,1,1,1],name='conv2_2')
-    conv3_1 = conv_layer(data,ksize=[1,1,data_in,filters_1x1_3],stride=[1,1,1,1],name='conv3_1')
-    conv3_2 = conv_layer(conv3_1,ksize=[5,5,filters_1x1_3,filters_5x5],stride=[1,1,1,1],name='conv3_2')
-    maxpool_1 = pool_layer(data,ksize=[1,3,3,1],stride=[1,1,1,1],name='maxpool_1',padding='SAME')
-    conv4_1 = conv_layer(maxpool_1,ksize=[1,1,data_in,filters_1x1_4],stride=[1,1,1,1],name='conv4_1')
-    inception_data = tf.concat([conv1_1,conv2_2,conv3_2,conv4_1],axis=-1)
-    # inception_data shape(None,width,height,filters_1x1_1 + filters_3x3 + filters_5x5 + filters_1x1_4)
+    with tf.variable_scope(name,reuse=tf.AUTO_REUSE):
+        # tf.get_variable_scope().reuse_variables()
+        data_in = data.shape[3]
+        conv1_1 = conv_layer(data, ksize=[1, 1, data_in, filters_1x1_1], stride=[1, 1, 1, 1], name='conv1_1')
+        conv2_1 = conv_layer(data, ksize=[1, 1, data_in, filters_1x1_2], stride=[1, 1, 1, 1], name='conv2_1')
+        conv2_2 = conv_layer(conv2_1, ksize=[3, 3, filters_1x1_2, filters_3x3], stride=[1, 1, 1, 1], name='conv2_2')
+        conv3_1 = conv_layer(data, ksize=[1, 1, data_in, filters_1x1_3], stride=[1, 1, 1, 1], name='conv3_1')
+        conv3_2 = conv_layer(conv3_1, ksize=[5, 5, filters_1x1_3, filters_5x5], stride=[1, 1, 1, 1], name='conv3_2')
+        maxpool_1 = pool_layer(data, ksize=[1, 3, 3, 1], stride=[1, 1, 1, 1], name='maxpool_1', padding='SAME')
+        conv4_1 = conv_layer(maxpool_1, ksize=[1, 1, data_in, filters_1x1_4], stride=[1, 1, 1, 1], name='conv4_1')
+        inception_data = tf.concat([conv1_1,conv2_2,conv3_2,conv4_1],axis=-1)
     return inception_data
-
 
 def pool_layer(data, ksize, stride, name, padding='VALID'):
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         max_pool = tf.nn.max_pool(value=data, ksize=ksize, strides=stride, padding=padding)
     return max_pool
 
+def avg_pool_layer(data,ksize,stride,name,padding='VALID'):
+    with tf.variable_scope(name,reuse=tf.AUTO_REUSE):
+        avg_pool = tf.nn.avg_pool(value=data, ksize=ksize, strides=stride, padding=padding)
+    return avg_pool
 
 def flatten(data):
     [a, b, c, d] = data.shape
