@@ -1,5 +1,5 @@
 # CNNs_Net
-Create the CNN mainstream network framework through Tensorflow, including LeNe, VGG, AlexNet; Test using MNIST and CIFAR data
+Create the CNN mainstream network framework through Tensorflow, including LeNe, VGG, AlexNet,InceptionV1-V4; Test using MNIST and CIFAR data
 
 CIFAR data:https://www.cs.toronto.edu/~kriz/cifar.html
 
