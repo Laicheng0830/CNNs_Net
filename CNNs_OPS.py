@@ -4,6 +4,7 @@
 Author: eric.lai
 Time: 2019/2/26 14:38
 """
+
 import numpy as np
 import tensorflow as tf
 
@@ -34,7 +35,25 @@ def convLayer_nGPU(x, kHeight, kWidth, strideX, strideY,
         mergeFeatureMap = tf.concat(axis = 3, values = featureMap)
         # print mergeFeatureMap.shape
         out = tf.nn.bias_add(mergeFeatureMap, b)
-        return tf.nn.relu(tf.reshape(out, mergeFeatureMap.get_shape().as_list()), name = scope.name)
+    return tf.nn.relu(tf.reshape(out, mergeFeatureMap.get_shape().as_list()), name = scope.name)
+
+def inception_model(data,filters_1x1_1, filters_1x1_2, filters_3x3, filters_1x1_3, filters_5x5, filters_1x1_4):
+    # (conv 1x1 1)
+    # (conv 1x1 1)==>(conv 3x3 1)
+    # (conv 1x1 1)==>(conv 5x5 1)
+    # (maxpool 3x3 1)==>(conv 1x1 1)
+    # concat
+    data_in = data.shape[3]
+    conv1_1 = conv_layer(data,ksize=[1,1,data_in,filters_1x1_1],stride=[1,1,1,1],name='conv1_1')
+    conv2_1 = conv_layer(data,ksize=[1,1,data_in,filters_1x1_2],stride=[1,1,1,1],name='conv2_1')
+    conv2_2 = conv_layer(conv2_1,ksize=[3,3,filters_1x1_2,filters_3x3],stride=[1,1,1,1],name='conv2_2')
+    conv3_1 = conv_layer(data,ksize=[1,1,data_in,filters_1x1_3],stride=[1,1,1,1],name='conv3_1')
+    conv3_2 = conv_layer(conv3_1,ksize=[5,5,filters_1x1_3,filters_5x5],stride=[1,1,1,1],name='conv3_2')
+    maxpool_1 = pool_layer(data,ksize=[1,3,3,1],stride=[1,1,1,1],name='maxpool_1',padding='SAME')
+    conv4_1 = conv_layer(maxpool_1,ksize=[1,1,data_in,filters_1x1_4],stride=[1,1,1,1],name='conv4_1')
+    inception_data = tf.concat([conv1_1,conv2_2,conv3_2,conv4_1],axis=-1)
+    # inception_data shape(None,width,height,filters_1x1_1 + filters_3x3 + filters_5x5 + filters_1x1_4)
+    return inception_data
 
 
 def pool_layer(data, ksize, stride, name, padding='VALID'):
