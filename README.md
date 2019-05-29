@@ -13,3 +13,4 @@ Create CNNs network,Error encountered:
 
 4.bathsize,If the batchsize is too small, it will not converge
 
+5.model pruning use tensorflow , model train modifier fully connected.
