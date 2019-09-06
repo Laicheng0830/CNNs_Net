@@ -49,7 +49,7 @@ class LeNet_Mode():
             fc = tf.nn.relu(tf.matmul(data,w)+ biases)
         return fc
 
-    def finlaout_layer(self,data,name,fc_dims):
+    def finalout_layer(self,data,name,fc_dims):
         with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
             w_init = tf.contrib.layers.xavier_initializer()
             w = tf.get_variable(shape=[data.shape[1],fc_dims],name= 'w',initializer=w_init)
