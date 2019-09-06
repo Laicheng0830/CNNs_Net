@@ -9,7 +9,6 @@ import numpy as np
 
 def leaky_relu(x, leak=0.2, name="lrelu"):
     """
-    用leakyrelu函数处理一个张量
     :param x:Tensor,typr = tf.float32
     :param leak:float
     :return:Tensor
@@ -22,7 +21,6 @@ def leaky_relu(x, leak=0.2, name="lrelu"):
 
 def activation_function(x,activation_function_type):
     """
-    用激活函数处理一个张量，函数形式可选
     :param x:Tensor
     :param activation_function_type:str activation function type,'lrelu','tanh','sigmoid','relu','linear'
     :return:Tensor
@@ -41,7 +39,6 @@ def activation_function(x,activation_function_type):
 
 def batch_norm(layer,center=True,scale=True,training=True,name='bn'):
     """
-    正则化一个张量
     :param layer:Tensor
     :param center:True or False ， If True, add offset of beta to normalized tensor. If False, beta is ignored.
     :param scale:True or False ,  If True, multiply by gamma. If False, gamma is not used.
@@ -56,7 +53,6 @@ def batch_norm(layer,center=True,scale=True,training=True,name='bn'):
 def fully_connected_layer(data, layer_dims, w_init = None, b_init = None,bias = True,activation_function_type='lrelu',
                           data_type=tf.float32,name='fcl',keep_prob=1):
     """
-    构造一个带激活函数的全连接层，可以选择是否带bias
     :param data:Tensor
     :param layer_dims:int
     :param w_init:default
@@ -97,7 +93,6 @@ def fully_connected_layer(data, layer_dims, w_init = None, b_init = None,bias = 
 def conv2d_encoder(data, kenerl_size, strides=[1, 1, 1, 1], w_init = None,norm = True,is_training = True, padding='SAME',
                  activation_function_type='lrelu', stddev=0.05, data_type=tf.float32,name="conv2en",keep_prob=1, with_w=False):
     """
-    构造2维卷积编码器，bias可选
     :param data:Tensor,must 4-D tensor
     :param kenerl_size:list ,kenerl_size of the new or existing variable.
     :param strides:A list of ints. 1-D tensor of length 4.
@@ -136,7 +131,6 @@ def conv2d_encoder(data, kenerl_size, strides=[1, 1, 1, 1], w_init = None,norm =
 def con2d_decoder(data, kenerl_size,output_shape, strides=[1, 1, 1, 1], k_init = None,norm = True,is_training = True, padding='SAME',
                  activation_function_type='lrelu', stddev=0.05, data_type=tf.float32,name="conv2de",keep_prob=1, with_w=False):
     """
-    构造2维卷积解码器，bias可选
     :param data:Tensor
     :param kenerl_size:kenerl_size of the new or existing variable.
     :param output_shape:A 1-D Tensor representing the output shape of the deconvolution op.
@@ -212,7 +206,6 @@ def separable_conv2d_encoder(data, depthwise_size,pointwise_size, d_init = None,
 def conv2d_layer(data, kenerl_size, strides=[1, 1, 1, 1], w_init = None, b_init = None,padding='SAME',
                  activation_function_type='lrelu', data_type=tf.float32,name="conv2",keep_prob=1):
     """
-    构造2维卷积层，bias可选
     :param data:Tensor
     :param kenerl_size:kenerl_size of the new or existing variable.
     :param strides:A string, either 'VALID' or 'SAME'. The padding algorithm.
@@ -241,7 +234,6 @@ def conv2d_layer(data, kenerl_size, strides=[1, 1, 1, 1], w_init = None, b_init 
     
 def max_pooling_layer(x, kenerl_size,strides, padding='SAME',name="maxpl"):
     """
-    构造一个池化层
     :param x:Tensor
     :param kenerl_size:kenerl_size of the new or existing variable.
     :param strides:A string, either 'VALID' or 'SAME'. The padding algorithm.
@@ -253,7 +245,6 @@ def max_pooling_layer(x, kenerl_size,strides, padding='SAME',name="maxpl"):
 
 def upconv2d_layer(data, kenerl,output_shape ,strides=[1, 1, 1, 1], padding='SAME',name="upcv2"):
     """
-    构造一个反卷积层
     :param data:Tensor
     :param kenerl:A 4-D Tensor with the same type as value and shape [height, width, output_channels, in_channels].
     :param output_shape:A 1-D Tensor representing the output shape of the deconvolution op.
@@ -266,7 +257,6 @@ def upconv2d_layer(data, kenerl,output_shape ,strides=[1, 1, 1, 1], padding='SAM
 
 def model_optimizer(lrate=1e-20,beta1=0.9, beta2=0.999,momentum_value=0.9,optimizer_type='opt'):
     """
-    构造一个优化器，多种类型可选
     :param lrate:A Tensor or a floating point value. The learning rate.
     :param beta1:A float value or a constant float tensor. The exponential decay rate for the 1st moment estimates.
     :param beta2:A float value or a constant float tensor. The exponential decay rate for the 2nd moment estimates.
@@ -285,7 +275,6 @@ def model_optimizer(lrate=1e-20,beta1=0.9, beta2=0.999,momentum_value=0.9,optimi
 
 def cost_function(predict_data,label,cost_type='mse'):
     """
-    构造一代价函数，多种类型可选
     :param predict_data:Tensor
     :param label:Tensor
     :param cost_type:An optional.'l1','mes','ce','hub'
@@ -302,14 +291,3 @@ def cost_function(predict_data,label,cost_type='mse'):
     if(cost_type=='softmax'):
         loss = tf.losses.softmax_cross_entropy(label,predict_data)
     return loss
-
-#def cost_function_plus(predict_data,label,cost_type='mse'):
-#    if(cost_type=='mse'):
-##        bb = np.shape(predict_data)
-##        print(bb)
-#        aa = predict_data- label
-#        a1= aa[:,0:233]*2
-#        a2 = aa[:,233:]*1
-#        aa = tf.concat([a1,a2], axis=1)
-#        loss = tf.reduce_mean(tf.square(aa))
-#    return loss
