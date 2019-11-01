@@ -2,22 +2,31 @@
 !/usr/bin/env python
 -*- coding:utf-8 -*-
 Author: eric.lai
-Time: 2019/2/26 14:38
+Created on 2019/11/1 9:36
 """
+# modefy: conv_layer,  inception_model
+# add create_var, batch_norm
 
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
-def conv_layer(data, ksize, stride, name, w_biases=False, padding="SAME"):
+def create_var(name, shape, initializer, trainable=True):
+    return tf.get_variable(name, shape=shape, dtype=tf.float32,
+                           initializer=initializer, trainable=trainable)
+
+def conv_layer(data, num_outputs, ksize, stride, name, w_biases=False, padding="SAME"):
+    # example:  conv_layer(data, 4, 3, 1, conv2)
+    num_inputs = data.get_shape()[-1]
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         w_init = tf.contrib.layers.xavier_initializer()
-        w = tf.get_variable(name='w', shape=ksize, initializer=w_init)
+        w = create_var(name='w', shape=[ksize, ksize, num_inputs, num_outputs],
+                       initializer=w_init)
         biases = tf.Variable(tf.constant(0.0, shape=[ksize[3]], dtype=tf.float32), 'biases')
     if w_biases == False:
-        cov = tf.nn.conv2d(input=data, filter=w, strides=stride, padding=padding)
+        cov = tf.nn.conv2d(input=data, filter=w, strides=[1, stride, stride, 1], padding=padding)
     else:
-        cov = tf.nn.conv2d(input=data, filter=w, stride=stride, padding=padding) + biases
+        cov = tf.nn.conv2d(input=data, filter=w, stride=[1, stride, stride, 1], padding=padding) + biases
     return cov
 
 def convLayer_nGPU(x, kHeight, kWidth, strideX, strideY,
@@ -45,15 +54,14 @@ def inception_model(data,filters_1x1_1, filters_1x1_2, filters_3x3, filters_1x1_
     # (maxpool 3x3 1)==>(conv 1x1 1)
     # concat
     with tf.variable_scope(name,reuse=tf.AUTO_REUSE):
-        # tf.get_variable_scope().reuse_variables()
         data_in = data.shape[3]
-        conv1_1 = conv_layer(data, ksize=[1, 1, data_in, filters_1x1_1], stride=[1, 1, 1, 1], name='conv1_1')
-        conv2_1 = conv_layer(data, ksize=[1, 1, data_in, filters_1x1_2], stride=[1, 1, 1, 1], name='conv2_1')
-        conv2_2 = conv_layer(conv2_1, ksize=[3, 3, filters_1x1_2, filters_3x3], stride=[1, 1, 1, 1], name='conv2_2')
-        conv3_1 = conv_layer(data, ksize=[1, 1, data_in, filters_1x1_3], stride=[1, 1, 1, 1], name='conv3_1')
-        conv3_2 = conv_layer(conv3_1, ksize=[5, 5, filters_1x1_3, filters_5x5], stride=[1, 1, 1, 1], name='conv3_2')
+        conv1_1 = conv_layer(data, filters_1x1_1, 1, 1, name='conv1_1')
+        conv2_1 = conv_layer(data, filters_1x1_2, 1, 1, name='conv2_1')
+        conv2_2 = conv_layer(conv2_1, filters_3x3, 3, 1, name='conv2_2')
+        conv3_1 = conv_layer(data, filters_1x1_3, 1, 1, name='conv3_1')
+        conv3_2 = conv_layer(conv3_1, filters_5x5, 5, 1, name='conv3_2')
         maxpool_1 = pool_layer(data, ksize=[1, 3, 3, 1], stride=[1, 1, 1, 1], name='maxpool_1', padding='SAME')
-        conv4_1 = conv_layer(maxpool_1, ksize=[1, 1, data_in, filters_1x1_4], stride=[1, 1, 1, 1], name='conv4_1')
+        conv4_1 = conv_layer(maxpool_1, filters_1x1_4, 1, 1, name='conv4_1')
         inception_data = tf.concat([conv1_1,conv2_2,conv3_2,conv4_1],axis=-1)
     return inception_data
 
@@ -72,7 +80,6 @@ def flatten(data):
     ft = tf.reshape(data, [-1, b * c * d])
     return ft
 
-
 def fc_layer(data, name, fc_dims, w_biases = 'True'):
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         data_shape = data.get_shape().as_list()
@@ -84,7 +91,6 @@ def fc_layer(data, name, fc_dims, w_biases = 'True'):
         else:
             fc = tf.nn.relu(tf.matmul(data,w))
     return fc
-
 
 def finlaout_layer(data, name, fc_dims, w_biases = 'Flase'):
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
@@ -110,3 +116,31 @@ def dropout(data, keeppro = 0.1,name = None):
 def lrn(data, R, alpha, beta, name = None, bias = 1.0):
     return tf.nn.lrn(data, depth_radius=R, alpha=alpha, beta=beta, bias=bias, name=name)
 
+def batch_norm(x, decay=0.999, epsilon=1e-03, is_training=True,
+               scope="scope"):
+    x_shape = x.get_shape()
+    num_inputs = x_shape[-1]
+    reduce_dims = list(range(len(x_shape) - 1))
+    with tf.variable_scope(scope):
+        beta = create_var("beta", [num_inputs,],
+                               initializer=tf.zeros_initializer())
+        gamma = create_var("gamma", [num_inputs,],
+                                initializer=tf.ones_initializer())
+        # for inference
+        moving_mean = create_var("moving_mean", [num_inputs,],
+                                 initializer=tf.zeros_initializer(),
+                                 trainable=False)
+        moving_variance = create_var("moving_variance", [num_inputs],
+                                     initializer=tf.ones_initializer(),
+                                     trainable=False)
+    if is_training:
+        mean, variance = tf.nn.moments(x, axes=reduce_dims)
+        update_move_mean = moving_averages.assign_moving_average(moving_mean,
+                                                mean, decay=decay)
+        update_move_variance = moving_averages.assign_moving_average(moving_variance,
+                                                variance, decay=decay)
+        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_move_mean)
+        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_move_variance)
+    else:
+        mean, variance = moving_mean, moving_variance
+    return tf.nn.batch_normalization(x, mean, variance, beta, gamma, epsilon)

@@ -19,7 +19,7 @@ class LeNet_Mode():
     def conv_layer(self, data, ksize, stride, name, w_biases = False,padding = "SAME"):
         with tf.variable_scope(name,reuse=tf.AUTO_REUSE):
             w_init = tf.contrib.layers.xavier_initializer()
-            w = tf.get_variable(name= name,shape= ksize, initializer= w_init)
+            w = tf.get_variable(name= 'w',shape= ksize, initializer= w_init)
             biases = tf.Variable(tf.constant(0.0, shape=[ksize[3]], dtype=tf.float32), 'biases')
         if w_biases == False:
             cov = tf.nn.conv2d(input= data, filter= w, strides= stride, padding= padding)
