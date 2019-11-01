@@ -17,9 +17,9 @@ class ResNet50(object):
 
         with tf.variable_scope(scope):
             # construct the model
-            net = conv_layer(inputs, 64, 7, 2, scope="conv1") # -> [batch, 112, 112, 64]
+            net = conv_layer(inputs, 64, 7, 2, name="conv1") # -> [batch, 112, 112, 64]
             net = tf.nn.relu(batch_norm(net, is_training=self.is_training, scope="bn1"))
-            net = pool_layer(net, 3, 2, scope="maxpool1")  # -> [batch, 56, 56, 64]
+            net = pool_layer(net, 3, 2, name="maxpool1")  # -> [batch, 56, 56, 64]
             net = self._block(net, 256, 3, init_stride=1, is_training=self.is_training,
                               scope="block2")           # -> [batch, 56, 56, 256]
             net = self._block(net, 512, 4, is_training=self.is_training, scope="block3")
@@ -28,9 +28,9 @@ class ResNet50(object):
                                                         # -> [batch, 14, 14, 1024]
             net = self._block(net, 2048, 3, is_training=self.is_training, scope="block5")
                                                         # -> [batch, 7, 7, 2048]
-            net = avg_pool_layer(net, 7, scope="avgpool5")    # -> [batch, 1, 1, 2048]
+            net = avg_pool_layer(net, 7, 1, name="avgpool5")    # -> [batch, 1, 1, 2048]
             net = tf.squeeze(net, [1, 2], name="SpatialSqueeze") # -> [batch, 2048]
-            self.logits = fc(net, self.num_classes, "fc6")       # -> [batch, num_classes]
+            self.logits = fc_layer(net, self.num_classes, "fc6")       # -> [batch, num_classes]
             self.predictions = tf.nn.softmax(self.logits)
 
 
@@ -51,17 +51,17 @@ class ResNet50(object):
             stride = 1 if n_in == n_out else 2
 
         with tf.variable_scope(scope):
-            h = conv2d(x, h_out, 1, stride=stride, scope="conv_1")
+            h = conv_layer(x, h_out, 1, stride=stride, name="conv_1")
             h = batch_norm(h, is_training=is_training, scope="bn_1")
             h = tf.nn.relu(h)
-            h = conv2d(h, h_out, 3, stride=1, scope="conv_2")
+            h = conv_layer(h, h_out, 3, stride=1, name="conv_2")
             h = batch_norm(h, is_training=is_training, scope="bn_2")
             h = tf.nn.relu(h)
-            h = conv2d(h, n_out, 1, stride=1, scope="conv_3")
+            h = conv_layer(h, n_out, 1, stride=1, name="conv_3")
             h = batch_norm(h, is_training=is_training, scope="bn_3")
 
             if n_in != n_out:
-                shortcut = conv2d(x, n_out, 1, stride=stride, scope="conv_4")
+                shortcut = conv_layer(x, n_out, 1, stride=stride, name="conv_4")
                 shortcut = batch_norm(shortcut, is_training=is_training, scope="bn_4")
             else:
                 shortcut = x

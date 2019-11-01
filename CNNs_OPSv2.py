@@ -4,7 +4,7 @@
 Author: eric.lai
 Created on 2019/11/1 9:36
 """
-# modefy: conv_layer,  inception_model
+# modefy: conv_layer,  inception_model, pool_layer
 # add create_var, batch_norm
 
 import numpy as np
@@ -22,7 +22,7 @@ def conv_layer(data, num_outputs, ksize, stride, name, w_biases=False, padding="
         w_init = tf.contrib.layers.xavier_initializer()
         w = create_var(name='w', shape=[ksize, ksize, num_inputs, num_outputs],
                        initializer=w_init)
-        biases = tf.Variable(tf.constant(0.0, shape=[ksize[3]], dtype=tf.float32), 'biases')
+        biases = tf.Variable(tf.constant(0.0, shape=[num_outputs], dtype=tf.float32), 'biases')
     if w_biases == False:
         cov = tf.nn.conv2d(input=data, filter=w, strides=[1, stride, stride, 1], padding=padding)
     else:
@@ -67,12 +67,12 @@ def inception_model(data,filters_1x1_1, filters_1x1_2, filters_3x3, filters_1x1_
 
 def pool_layer(data, ksize, stride, name, padding='VALID'):
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
-        max_pool = tf.nn.max_pool(value=data, ksize=ksize, strides=stride, padding=padding)
+        max_pool = tf.nn.max_pool(value=data, ksize=[1, ksize, ksize, 1], strides=[1, stride, stride, 1], padding=padding)
     return max_pool
 
 def avg_pool_layer(data,ksize,stride,name,padding='VALID'):
     with tf.variable_scope(name,reuse=tf.AUTO_REUSE):
-        avg_pool = tf.nn.avg_pool(value=data, ksize=ksize, strides=stride, padding=padding)
+        avg_pool = tf.nn.avg_pool(value=data, ksize=[1, ksize, ksize, 1], strides=[1, stride, stride, 1], padding=padding)
     return avg_pool
 
 def flatten(data):
@@ -80,7 +80,7 @@ def flatten(data):
     ft = tf.reshape(data, [-1, b * c * d])
     return ft
 
-def fc_layer(data, name, fc_dims, w_biases = 'True'):
+def fc_layer(data, fc_dims, name, w_biases = 'True'):
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         data_shape = data.get_shape().as_list()
         w_init = tf.contrib.layers.xavier_initializer()
