@@ -7,13 +7,16 @@ Created on 2019/10/31 16:02
 
 from CNNs_OPSv2 import *
 import tensorflow as tf
+from tensorflow.examples.tutorials.mnist import input_data
+
 
 class ResNet50(object):
-    def __init__(self, inputs, num_classes=1000, is_training=True,
+    def build_model(self, height, width, channel,num_classes=10, is_training=True,
                  scope="resnet50"):
-        self.inputs =inputs
         self.is_training = is_training
         self.num_classes = num_classes
+        inputs = tf.placeholder(dtype= tf.float32, shape = [None,height,width,channel])
+        y = tf.placeholder(dtype=tf.float32, shape=[None, num_classes])
 
         with tf.variable_scope(scope):
             # construct the model
@@ -32,6 +35,19 @@ class ResNet50(object):
             net = tf.squeeze(net, [1, 2], name="SpatialSqueeze") # -> [batch, 2048]
             self.logits = fc_layer(net, self.num_classes, "fc6")       # -> [batch, num_classes]
             self.predictions = tf.nn.softmax(self.logits)
+            self.loss = tf.losses.softmax_cross_entropy(self.predictions, y)
+            optimize = tf.train.AdamOptimizer(learning_rate=1e-3).minimize(self.loss)
+
+            correct_prediction = tf.equal(tf.argmax(self.predictions, 1), tf.argmax(y, 1))
+            accurary = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
+        return dict(
+                x=inputs,
+                y=y,
+                optimize=optimize,
+                correct_prediction=self.predictions,
+                cost=self.loss,
+                accurary = accurary
+            )
 
 
     def _block(self, x, n_out, n, init_stride=2, is_training=True, scope="block"):
@@ -67,7 +83,32 @@ class ResNet50(object):
                 shortcut = x
             return tf.nn.relu(shortcut + h)
 
+    def init_sess(self):
+        init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+        self.sess = tf.Session()
+        self.sess.run(init)
+
+    def train_network(self, graph, x_train, y_train):
+        # Tensorfolw Adding more and more nodes to the previous graph results in a larger and larger memory footprint
+        # reset graph
+        tf.reset_default_graph()
+        self.sess.run(graph['optimize'], feed_dict={graph['inputs']: x_train, graph['y']: y_train})
+
+    def load_data(self):
+        mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+
+        g = self.build_model(28, 28, 1, 10)
+        self.init_sess()
+        # Build the model first, then initialize it, just once
+        for i in range(1000):
+            batch_xs, batch_ys = mnist.train.next_batch(1000)
+            batch_xs = np.reshape(batch_xs,[-1,28,28,1])
+            self.train_network(g,batch_xs,batch_ys)
+            if i%5==0:
+                print("cost: ",self.sess.run(g['cost'],feed_dict={g['inputs']:batch_xs, g['y']:batch_ys}),"accurary: ",self.sess.run(g['accurary'],feed_dict={g['x']:batch_xs, g['y']:batch_ys}))
+                # print("correct_prediction",self.sess.run(g['correct_prediction'],feed_dict={g['x']:batch_xs,g['y']:batch_ys}))
+
+
 if __name__ == "__main__":
-    x = tf.random_normal([32, 224, 224, 3])
-    resnet50 = ResNet50(x)
-    print(resnet50.logits)
+    resnet50 = ResNet50()
+    resnet50.load_data()
